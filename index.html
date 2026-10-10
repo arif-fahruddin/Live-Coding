@@ -717,8 +717,12 @@
       .status-item.status-message.saving {
         color: var(--orange);
       }
-      .status-spacer {
-        flex: 1;
+      .status-credit {
+        flex: 1 1 auto;
+        min-width: 0;
+        color: var(--subtle);
+        text-align: center;
+        white-space: nowrap;
       }
       .shortcut {
         padding: 3px 5px;
@@ -1240,7 +1244,7 @@
               >
                 <div class="autocomplete-item active" id="autocompleteItem">
                   <span id="autocompletePreview">&lt;h1&gt; &lt;/h1&gt;</span
-                  ><small>Tab to insert</small>
+                  ><small>Enter / Tab to insert</small>
                 </div>
               </div>
               <textarea
@@ -1337,7 +1341,7 @@
         <div class="status-item">
           <span>Last render</span><strong id="renderTime">—</strong>
         </div>
-        <div class="status-spacer"></div>
+        <span class="status-credit">© 2026 wongsoeban std</span>
         <span class="shortcut">⌘ / Ctrl + Enter&nbsp; Run</span>
         <span class="shortcut">⌘ / Ctrl + S&nbsp; Save</span>
       </footer>
@@ -1911,6 +1915,10 @@
               scheduleRun();
             }
             if (event.key === "Enter") {
+              if (acceptAutocomplete(editor)) {
+                event.preventDefault();
+                return;
+              }
               const line = editor.value
                 .slice(0, editor.selectionStart)
                 .split("\n")
