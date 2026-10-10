@@ -1,0 +1,2110 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <title>Labkom MALADI — Live Coding Studio</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23b6f36b'/%3E%3Cpath d='M24 20 12 32l12 12M40 20l12 12-12 12M36 16 28 48' fill='none' stroke='%23101518' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+      :root {
+        --bg: #11151d;
+        --bg-deep: #0b0e13;
+        --panel: #171c25;
+        --panel-soft: #1c2330;
+        --panel-hover: #242d3b;
+        --line: #2c3544;
+        --line-bright: #3d4a5f;
+        --text: #f5f7fb;
+        --muted: #8995a9;
+        --subtle: #5c687b;
+        --accent: #b6f36b;
+        --accent-soft: rgba(182, 243, 107, 0.13);
+        --blue: #6ca3ff;
+        --danger: #ff7d93;
+        --orange: #f3b368;
+        --editor-bg: #10141b;
+        --code: #d9e0eb;
+        --gutter: #657084;
+        --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+        --radius: 11px;
+      }
+
+      [data-theme="light"] {
+        --bg: #e9edf3;
+        --bg-deep: #dfe5ed;
+        --panel: #f7f9fc;
+        --panel-soft: #edf1f6;
+        --panel-hover: #e2e8f0;
+        --line: #cbd4e1;
+        --line-bright: #aeb9ca;
+        --text: #172033;
+        --muted: #607087;
+        --subtle: #8490a3;
+        --accent: #5c9b21;
+        --accent-soft: rgba(92, 155, 33, 0.12);
+        --blue: #3978d6;
+        --danger: #c54864;
+        --orange: #b9782c;
+        --editor-bg: #f8fafc;
+        --code: #263244;
+        --gutter: #8996aa;
+        --shadow: 0 24px 70px rgba(35, 53, 80, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at 86% -12%,
+            rgba(108, 163, 255, 0.08),
+            transparent 31%
+          ),
+          radial-gradient(
+            circle at 8% 110%,
+            rgba(182, 243, 107, 0.055),
+            transparent 28%
+          ),
+          var(--bg);
+        color: var(--text);
+        font-family: "Manrope", ui-sans-serif, sans-serif;
+        overflow: hidden;
+        transition:
+          background 0.25s ease,
+          color 0.25s ease;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+      button {
+        color: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .mono {
+        font-family: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      .app {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .topbar {
+        height: 58px;
+        flex: 0 0 58px;
+        display: grid;
+        grid-template-columns:
+          max-content max-content minmax(220px, 1fr)
+          max-content;
+        align-items: center;
+        gap: 12px;
+        padding: 0 18px;
+        background: rgba(15, 19, 27, 0.86);
+        border-bottom: 1px solid var(--line);
+        backdrop-filter: blur(18px);
+        position: relative;
+        z-index: 10;
+      }
+      [data-theme="light"] .topbar {
+        background: rgba(248, 250, 252, 0.9);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        text-decoration: none;
+        color: var(--text);
+      }
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        background: var(--accent);
+        color: #101810;
+        clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%);
+        font-size: 17px;
+      }
+      .brand-copy {
+        display: grid;
+        gap: 1px;
+      }
+      .brand-name {
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .brand-caption {
+        color: var(--muted);
+        font-size: 9px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        min-width: 0;
+      }
+      .nav-button,
+      .icon-button,
+      .tab-button,
+      .run-button {
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          border-color 0.18s ease,
+          transform 0.18s ease;
+      }
+      .nav-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 9px;
+        color: var(--muted);
+        font-size: 12px;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+      .nav-button:hover {
+        color: var(--text);
+        background: var(--panel-hover);
+      }
+      .nav-button iconify-icon {
+        font-size: 16px;
+      }
+      .nav-button .chevron {
+        margin-left: 1px;
+        font-size: 12px;
+        opacity: 0.65;
+      }
+
+      .project-tabs {
+        position: static;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 2px;
+        min-width: 0;
+      }
+      .tab-button {
+        height: 37px;
+        min-width: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 0 11px;
+        border: 1px solid transparent;
+        border-bottom: 0;
+        border-radius: 7px 7px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .tab-button:hover {
+        color: var(--text);
+        background: var(--panel-soft);
+      }
+      .tab-button.active {
+        color: var(--text);
+        background: var(--panel);
+        border-color: var(--line);
+      }
+      .tab-button.active .tab-dot {
+        background: var(--accent);
+        box-shadow: 0 0 9px var(--accent);
+      }
+      .tab-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--subtle);
+        transition: background 0.2s ease;
+      }
+      .tab-type {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tab-chevron {
+        color: var(--subtle);
+        font-size: 10px;
+      }
+
+      .bar-right {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 7px;
+        min-width: 0;
+      }
+      .bar-divider {
+        width: 1px;
+        height: 22px;
+        background: var(--line);
+        margin: 0 2px;
+      }
+      .project-name {
+        min-width: 130px;
+        width: clamp(130px, 13vw, 178px);
+        padding: 8px 11px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--text);
+        background: var(--panel-soft);
+        font-size: 12px;
+        outline: none;
+      }
+      .project-name:focus {
+        border-color: var(--blue);
+      }
+      .icon-button {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        border-radius: 7px;
+        font-size: 17px;
+      }
+      .icon-button iconify-icon {
+        font-size: 18px;
+      }
+      .icon-button:hover {
+        color: var(--text);
+        background: var(--panel-hover);
+      }
+      .run-button {
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 13px;
+        border: 1px solid rgba(182, 243, 107, 0.28);
+        border-radius: 6px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 800;
+        font-size: 11px;
+      }
+      .run-button:hover {
+        background: rgba(182, 243, 107, 0.22);
+        transform: translateY(-1px);
+      }
+      .run-icon {
+        display: inline-flex;
+        font-size: 14px;
+      }
+      .run-button iconify-icon {
+        font-size: 15px;
+      }
+
+      .workspace {
+        min-height: 0;
+        flex: 1;
+        display: flex;
+        padding: 12px;
+        gap: 0;
+      }
+      .editor-panel,
+      .preview-panel {
+        min-width: 260px;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+      .editor-panel {
+        width: 51%;
+        border-radius: var(--radius) 0 0 var(--radius);
+      }
+      .preview-panel {
+        width: 49%;
+        border-radius: 0 var(--radius) var(--radius) 0;
+        background: var(--bg-deep);
+      }
+      .resize-handle {
+        width: 8px;
+        flex: 0 0 8px;
+        cursor: col-resize;
+        position: relative;
+        z-index: 4;
+        background: var(--panel);
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .resize-handle::after {
+        content: "";
+        position: absolute;
+        width: 3px;
+        height: 36px;
+        left: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-radius: 4px;
+        background: var(--line-bright);
+        transition:
+          background 0.15s ease,
+          height 0.15s ease;
+      }
+      .resize-handle:hover::after,
+      .resize-handle.dragging::after {
+        height: 52px;
+        background: var(--accent);
+      }
+
+      .panel-head {
+        height: 47px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .panel-label {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .panel-label strong {
+        color: var(--text);
+        font-size: 12px;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 10px rgba(182, 243, 107, 0.55);
+      }
+      .status-dot.preview-dot {
+        background: var(--blue);
+        box-shadow: 0 0 10px rgba(108, 163, 255, 0.5);
+      }
+      .head-tools {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .small-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 5px 7px;
+        border-radius: 5px;
+        font-size: 11px;
+      }
+      .small-button iconify-icon {
+        font-size: 14px;
+      }
+      .small-button:hover {
+        background: var(--panel-hover);
+        color: var(--text);
+      }
+
+      .editor-body {
+        height: calc(100% - 47px);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: var(--editor-bg);
+      }
+      .editor-toolbar {
+        height: 38px;
+        flex: 0 0 38px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 12px;
+        border-bottom: 1px solid rgba(44, 53, 68, 0.55);
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .file-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 7px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        color: var(--text);
+        background: var(--panel-soft);
+      }
+      .file-pill iconify-icon {
+        color: var(--accent);
+        font-size: 15px;
+      }
+      .toolbar-note {
+        margin-left: auto;
+        opacity: 0.7;
+      }
+      .code-wrap {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
+      }
+      .line-numbers {
+        width: 49px;
+        flex: 0 0 49px;
+        padding-top: 16px;
+        padding-right: 12px;
+        overflow: hidden;
+        color: var(--gutter);
+        text-align: right;
+        font:
+          12px/1.75 "DM Mono",
+          monospace;
+        user-select: none;
+        opacity: 0.72;
+      }
+      .line-numbers div {
+        height: 21px;
+      }
+      .editor-input {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        resize: none;
+        border: 0;
+        outline: 0;
+        padding: 16px 20px 24px 4px;
+        background: transparent;
+        color: var(--code);
+        caret-color: var(--accent);
+        font:
+          12px/1.75 "DM Mono",
+          ui-monospace,
+          monospace;
+        tab-size: 2;
+        white-space: pre;
+        overflow: auto;
+      }
+      .editor-input::selection {
+        background: rgba(108, 163, 255, 0.27);
+      }
+      .editor-input::placeholder {
+        color: var(--subtle);
+      }
+      .autocomplete-menu {
+        position: absolute;
+        left: 54px;
+        top: 10px;
+        z-index: 8;
+        min-width: 205px;
+        max-width: min(260px, calc(100% - 70px));
+        padding: 5px;
+        border: 1px solid var(--line-bright);
+        border-radius: 7px;
+        background: var(--panel);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+          opacity 0.12s ease,
+          transform 0.12s ease;
+      }
+      .autocomplete-menu.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .autocomplete-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 7px 8px;
+        border-radius: 4px;
+        color: var(--text);
+        font:
+          11px "DM Mono",
+          monospace;
+      }
+      .autocomplete-item.active {
+        background: var(--accent-soft);
+      }
+      .autocomplete-item small {
+        color: var(--muted);
+        font:
+          10px "Manrope",
+          sans-serif;
+      }
+      .editor-input::-webkit-scrollbar,
+      .line-numbers::-webkit-scrollbar,
+      .preview-frame::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      .editor-input::-webkit-scrollbar-track,
+      .line-numbers::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .editor-input::-webkit-scrollbar-thumb,
+      .line-numbers::-webkit-scrollbar-thumb {
+        background: var(--line);
+        border-radius: 8px;
+        border: 3px solid var(--editor-bg);
+      }
+
+      .preview-head-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 7px;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border-radius: 5px;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .live-badge span {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 1.7s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.35;
+          transform: scale(0.85);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      .preview-body {
+        height: calc(100% - 47px);
+        position: relative;
+        background: #fff;
+      }
+      .preview-frame {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: #fff;
+      }
+      .preview-empty {
+        position: absolute;
+        inset: 0;
+        display: none;
+        place-items: center;
+        background: var(--bg-deep);
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .preview-empty.visible {
+        display: grid;
+      }
+      .empty-card {
+        width: min(300px, 80%);
+        text-align: center;
+        padding: 28px;
+        border: 1px dashed var(--line-bright);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+      .empty-graphic {
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 15px;
+        border: 1px solid var(--line-bright);
+        border-radius: 13px;
+        color: var(--accent);
+        font-size: 20px;
+      }
+      .empty-card h2 {
+        margin: 0 0 7px;
+        font-size: 15px;
+        color: var(--text);
+      }
+      .empty-card p {
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.65;
+      }
+
+      .statusbar {
+        height: 31px;
+        flex: 0 0 31px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 0 17px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        background: rgba(13, 17, 24, 0.78);
+        font-size: 10px;
+      }
+      [data-theme="light"] .statusbar {
+        background: rgba(248, 250, 252, 0.8);
+      }
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .status-item strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .status-item.status-message {
+        color: var(--accent);
+      }
+      .status-item.status-message.error {
+        color: var(--danger);
+      }
+      .status-item.status-message.saving {
+        color: var(--orange);
+      }
+      .status-spacer {
+        flex: 1;
+      }
+      .shortcut {
+        padding: 3px 5px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        color: var(--subtle);
+        font-size: 9px;
+      }
+
+      .popover,
+      .modal-backdrop {
+        z-index: 30;
+      }
+      .popover {
+        position: fixed;
+        min-width: 166px;
+        padding: 6px;
+        border: 1px solid var(--line-bright);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        display: none;
+      }
+      .popover.open {
+        display: block;
+        animation: pop 0.15s ease-out;
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: translateY(-4px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      .popover button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        border: 0;
+        padding: 9px 10px;
+        border-radius: 5px;
+        background: transparent;
+        color: var(--muted);
+        text-align: left;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      .popover button iconify-icon {
+        font-size: 15px;
+        color: var(--accent);
+      }
+      .popover button:hover {
+        background: var(--panel-hover);
+        color: var(--text);
+      }
+      .popover hr {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 5px 4px;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        padding: 22px;
+        background: rgba(4, 6, 10, 0.62);
+        backdrop-filter: blur(5px);
+      }
+      .modal-backdrop.open {
+        display: grid;
+      }
+      .modal {
+        width: min(430px, 100%);
+        border: 1px solid var(--line-bright);
+        border-radius: 13px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        animation: pop 0.18s ease-out;
+      }
+      .modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 17px 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .modal-head h2 {
+        margin: 0;
+        font-size: 14px;
+      }
+      .modal-content {
+        padding: 18px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.7;
+      }
+      .modal-content p {
+        margin: 0 0 13px;
+      }
+      .modal-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .modal-row:last-child {
+        border-bottom: 0;
+      }
+      .modal-row b {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .kbd {
+        color: var(--text);
+        padding: 3px 6px;
+        border: 1px solid var(--line-bright);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        background: var(--panel-soft);
+        font:
+          10px "DM Mono",
+          monospace;
+        white-space: nowrap;
+      }
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding: 13px 18px;
+        border-top: 1px solid var(--line);
+      }
+      .modal-close {
+        border: 0;
+        background: var(--accent);
+        color: #16200f;
+        border-radius: 5px;
+        padding: 8px 13px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      @media (max-width: 1100px) {
+        .topbar {
+          grid-template-columns:
+            max-content max-content minmax(0, 1fr)
+            max-content;
+          gap: 9px;
+          padding-inline: 12px;
+        }
+        .brand {
+          min-width: auto;
+        }
+        .project-tabs {
+          position: static;
+          transform: none;
+          margin-left: 0;
+        }
+        .bar-right {
+          gap: 5px;
+        }
+        .project-name {
+          min-width: 124px;
+          width: 124px;
+        }
+        .tab-button {
+          min-width: 72px;
+          padding-inline: 9px;
+        }
+        .tab-chevron {
+          display: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        body {
+          overflow: auto;
+        }
+        .app {
+          min-height: 100%;
+          height: auto;
+        }
+        .topbar {
+          height: auto;
+          min-height: 58px;
+          flex: 0 0 auto;
+          grid-template-columns: minmax(0, 1fr) max-content;
+          grid-template-areas: "brand actions" "tabs tabs";
+          align-content: center;
+          padding: 8px 10px 0;
+          row-gap: 5px;
+        }
+        .brand {
+          grid-area: brand;
+          min-width: 0;
+        }
+        .brand-caption,
+        .top-actions {
+          display: none;
+        }
+        .bar-right {
+          grid-area: actions;
+          margin-left: auto;
+        }
+        .project-tabs {
+          grid-area: tabs;
+          width: 100%;
+          justify-content: center;
+          margin: 0;
+          height: 38px;
+        }
+        .workspace {
+          flex: none;
+          min-height: 0;
+          flex-direction: column;
+          padding: 8px;
+          gap: 8px;
+          overflow: visible;
+        }
+        .editor-panel,
+        .preview-panel {
+          width: 100% !important;
+          min-width: 0;
+          min-height: 0;
+          height: clamp(360px, 58svh, 620px);
+          flex: 0 0 clamp(360px, 58svh, 620px);
+          border-radius: var(--radius);
+        }
+        .resize-handle {
+          display: none;
+        }
+        .statusbar {
+          position: sticky;
+          z-index: 5;
+          bottom: 0;
+          min-height: 31px;
+          padding-inline: 10px;
+          gap: 10px;
+        }
+        .shortcut {
+          display: none;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .topbar {
+          grid-template-columns: 1fr;
+          grid-template-areas: "brand" "actions" "tabs";
+          padding-inline: max(10px, env(safe-area-inset-left));
+          padding-right: max(10px, env(safe-area-inset-right));
+        }
+        .brand-mark {
+          width: 26px;
+          height: 26px;
+          font-size: 12px;
+        }
+        .brand-name {
+          font-size: 12px;
+        }
+        .bar-right {
+          width: 100%;
+          margin-left: 0;
+        }
+        .project-name {
+          width: auto;
+          min-width: 0;
+          flex: 1 1 auto;
+        }
+        .bar-divider {
+          display: none;
+        }
+        .icon-button {
+          width: 30px;
+          height: 30px;
+        }
+        .run-button {
+          padding-inline: 11px;
+        }
+        .tab-button {
+          min-width: 0;
+          flex: 1 1 0;
+          max-width: 100px;
+          height: 34px;
+          font-size: 11px;
+        }
+        .workspace {
+          padding: 6px;
+          gap: 6px;
+        }
+        .editor-panel,
+        .preview-panel {
+          height: clamp(340px, 64svh, 560px);
+          flex-basis: clamp(340px, 64svh, 560px);
+        }
+        .panel-head {
+          padding-inline: 10px;
+        }
+        .panel-label {
+          min-width: 0;
+          gap: 6px;
+        }
+        .panel-label .mono {
+          max-width: 28vw;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .editor-toolbar {
+          padding-inline: 9px;
+        }
+        .toolbar-note {
+          display: none;
+        }
+        .line-numbers {
+          width: 40px;
+          flex-basis: 40px;
+          padding-right: 8px;
+        }
+        .editor-input {
+          padding-left: 4px;
+          padding-right: 12px;
+          font-size: 11px;
+        }
+        .autocomplete-menu {
+          left: 45px;
+          max-width: calc(100% - 55px);
+        }
+        .status-item:nth-child(2),
+        .status-item:nth-child(3) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <header class="topbar">
+        <a
+          class="brand"
+          href="#"
+          aria-label="Labkom MALADI home"
+          onclick="return false;"
+        >
+          <span class="brand-mark"
+            ><iconify-icon
+              icon="solar:code-square-linear"
+              aria-hidden="true"
+            ></iconify-icon
+          ></span>
+          <span class="brand-copy"
+            ><span class="brand-name">Labkom MALADI</span
+            ><span class="brand-caption">live coding studio</span></span
+          >
+        </a>
+        <nav class="top-actions" aria-label="Main navigation">
+          <button class="nav-button" data-menu="projectMenu">
+            <iconify-icon
+              icon="solar:folder-with-files-linear"
+              aria-hidden="true"
+            ></iconify-icon
+            ><span>Project</span
+            ><iconify-icon
+              class="chevron"
+              icon="solar:alt-arrow-down-linear"
+              aria-hidden="true"
+            ></iconify-icon>
+          </button>
+          <button class="nav-button" data-modal="settingsModal">
+            <iconify-icon
+              icon="solar:settings-linear"
+              aria-hidden="true"
+            ></iconify-icon
+            ><span>Settings</span>
+          </button>
+          <button class="nav-button" data-modal="helpModal">
+            <iconify-icon
+              icon="solar:question-circle-linear"
+              aria-hidden="true"
+            ></iconify-icon
+            ><span>Help</span>
+          </button>
+        </nav>
+
+        <div class="project-tabs" role="tablist" aria-label="Code files">
+          <button
+            class="tab-button active"
+            data-tab="html"
+            role="tab"
+            aria-selected="true"
+          >
+            <span class="tab-type"><span class="tab-dot"></span>HTML</span
+            ><span class="tab-chevron">⌄</span>
+          </button>
+          <button
+            class="tab-button"
+            data-tab="css"
+            role="tab"
+            aria-selected="false"
+          >
+            <span class="tab-type"><span class="tab-dot"></span>CSS</span
+            ><span class="tab-chevron">⌄</span>
+          </button>
+          <button
+            class="tab-button"
+            data-tab="js"
+            role="tab"
+            aria-selected="false"
+          >
+            <span class="tab-type"><span class="tab-dot"></span>JS</span
+            ><span class="tab-chevron">⌄</span>
+          </button>
+        </div>
+
+        <div class="bar-right">
+          <input
+            id="projectName"
+            class="project-name"
+            aria-label="Project name"
+            value="Untitled Project"
+            spellcheck="false"
+          />
+          <span class="bar-divider" aria-hidden="true"></span>
+          <button
+            class="icon-button"
+            id="themeToggle"
+            aria-label="Toggle theme"
+            title="Toggle theme"
+          >
+            <iconify-icon
+              icon="solar:moon-stars-linear"
+              aria-hidden="true"
+            ></iconify-icon>
+          </button>
+          <button
+            class="icon-button"
+            id="shareButton"
+            aria-label="Share project"
+            title="Copy share link"
+          >
+            <iconify-icon
+              icon="solar:share-linear"
+              aria-hidden="true"
+            ></iconify-icon>
+          </button>
+          <button class="run-button" id="runButton">
+            <iconify-icon
+              class="run-icon"
+              icon="solar:play-circle-linear"
+              aria-hidden="true"
+            ></iconify-icon
+            ><span>Run</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace" id="workspace">
+        <section class="editor-panel" id="editorPanel" aria-label="Code editor">
+          <div class="panel-head">
+            <div class="panel-label">
+              <span class="status-dot"></span><strong>Editor</strong
+              ><span class="mono" id="activeFile">index.html</span>
+            </div>
+            <div class="head-tools">
+              <button
+                class="small-button"
+                id="formatButton"
+                title="Format active file"
+              >
+                <iconify-icon
+                  icon="solar:magic-stick-3-linear"
+                  aria-hidden="true"
+                ></iconify-icon
+                ><span>Format</span></button
+              ><button
+                class="small-button"
+                id="resetButton"
+                title="Clear HTML, CSS, and JavaScript"
+              >
+                <iconify-icon
+                  icon="solar:eraser-linear"
+                  aria-hidden="true"
+                ></iconify-icon
+                ><span>Clear all</span>
+              </button>
+            </div>
+          </div>
+          <div class="editor-body">
+            <div class="editor-toolbar">
+              <span class="file-pill"
+                ><iconify-icon
+                  id="fileIcon"
+                  icon="solar:code-square-linear"
+                  aria-hidden="true"
+                ></iconify-icon
+                ><span id="fileLabel">index.html</span></span
+              ><span class="toolbar-note mono" id="editorHint"
+                >HTML · 2 spaces</span
+              >
+            </div>
+            <div class="code-wrap">
+              <div
+                class="line-numbers"
+                id="lineNumbers"
+                aria-hidden="true"
+              ></div>
+              <div
+                class="autocomplete-menu"
+                id="autocompleteMenu"
+                role="listbox"
+                aria-label="HTML tag suggestions"
+              >
+                <div class="autocomplete-item active" id="autocompleteItem">
+                  <span id="autocompletePreview">&lt;h1&gt; &lt;/h1&gt;</span
+                  ><small>Tab to insert</small>
+                </div>
+              </div>
+              <textarea
+                id="htmlEditor"
+                class="editor-input"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="off"
+                aria-label="HTML editor"
+              ></textarea>
+              <textarea
+                id="cssEditor"
+                class="editor-input"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="off"
+                aria-label="CSS editor"
+                hidden
+              ></textarea>
+              <textarea
+                id="jsEditor"
+                class="editor-input"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="off"
+                aria-label="JavaScript editor"
+                hidden
+              ></textarea>
+            </div>
+          </div>
+        </section>
+
+        <div
+          class="resize-handle"
+          id="resizeHandle"
+          role="separator"
+          aria-label="Resize editor and preview"
+          tabindex="0"
+        ></div>
+
+        <section
+          class="preview-panel"
+          id="previewPanel"
+          aria-label="Live preview"
+        >
+          <div class="panel-head">
+            <div class="panel-label">
+              <span class="status-dot preview-dot"></span
+              ><strong>Preview</strong
+              ><span class="mono" id="previewSize">live iframe</span>
+            </div>
+            <div class="preview-head-meta">
+              <span class="live-badge"><span></span> Live</span
+              ><button
+                class="small-button"
+                id="openPreview"
+                title="Open preview in new tab"
+              >
+                <iconify-icon
+                  icon="solar:arrow-up-right-linear"
+                  aria-hidden="true"
+                ></iconify-icon>
+              </button>
+            </div>
+          </div>
+          <div class="preview-body">
+            <iframe
+              id="previewFrame"
+              class="preview-frame"
+              title="Live preview"
+              sandbox="allow-scripts"
+            ></iframe>
+            <div class="preview-empty" id="previewEmpty">
+              <div class="empty-card">
+                <div class="empty-graphic">⌘</div>
+                <h2>Canvas is ready</h2>
+                <p>
+                  Write some HTML, CSS, or JavaScript on the left. Your result
+                  will appear here instantly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="statusbar">
+        <div class="status-item status-message" id="statusMessage">
+          <span>●</span><strong>Ready</strong>
+        </div>
+        <div class="status-item">
+          <span>Chars</span><strong id="charCount">0</strong>
+        </div>
+        <div class="status-item">
+          <span>Last render</span><strong id="renderTime">—</strong>
+        </div>
+        <div class="status-spacer"></div>
+        <span class="shortcut">⌘ / Ctrl + Enter&nbsp; Run</span>
+        <span class="shortcut">⌘ / Ctrl + S&nbsp; Save</span>
+      </footer>
+    </div>
+
+    <div class="popover" id="projectMenu" role="menu">
+      <button data-action="new">
+        <iconify-icon
+          icon="solar:add-square-linear"
+          aria-hidden="true"
+        ></iconify-icon
+        ><span>New project</span>
+      </button>
+      <button data-action="save">
+        <iconify-icon
+          icon="solar:archive-down-minimalistic-linear"
+          aria-hidden="true"
+        ></iconify-icon
+        ><span>Save to browser</span>
+      </button>
+      <hr />
+      <button data-action="reset">
+        <iconify-icon
+          icon="solar:eraser-linear"
+          aria-hidden="true"
+        ></iconify-icon
+        ><span>Clear all code</span>
+      </button>
+    </div>
+
+    <div
+      class="modal-backdrop"
+      id="settingsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settingsTitle"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <h2 id="settingsTitle">Workspace settings</h2>
+          <button class="icon-button modal-dismiss" aria-label="Close settings">
+            <iconify-icon
+              icon="solar:close-circle-linear"
+              aria-hidden="true"
+            ></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-content">
+          <div class="modal-row">
+            <b>Theme</b><span id="themeLabel">Dark workspace</span>
+          </div>
+          <div class="modal-row">
+            <b>Auto-run</b><span>Enabled · 420ms debounce</span>
+          </div>
+          <div class="modal-row">
+            <b>Storage</b><span>Local browser only</span>
+          </div>
+          <p style="margin-top: 14px">
+            Labkom MALADI keeps your project in this browser. No account or server is
+            required.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-close modal-dismiss">Done</button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal-backdrop"
+      id="helpModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="helpTitle"
+    >
+      <div class="modal">
+        <div class="modal-head">
+          <h2 id="helpTitle">Quick help</h2>
+          <button class="icon-button modal-dismiss" aria-label="Close help">
+            <iconify-icon
+              icon="solar:close-circle-linear"
+              aria-hidden="true"
+            ></iconify-icon>
+          </button>
+        </div>
+        <div class="modal-content">
+          <p>
+            Build a tiny site across three focused files, then watch the
+            sandboxed result update on the right.
+          </p>
+          <div class="modal-row">
+            <b>Run preview</b><span class="kbd">⌘ / Ctrl + Enter</span>
+          </div>
+          <div class="modal-row">
+            <b>Save project</b><span class="kbd">⌘ / Ctrl + S</span>
+          </div>
+          <div class="modal-row">
+            <b>Indent line</b><span class="kbd">Tab</span>
+          </div>
+          <div class="modal-row">
+            <b>Switch file</b><span class="kbd">Click a tab</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-close modal-dismiss">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const STORAGE_KEY = "framelab-project-v1";
+        const STARTER = Object.freeze({
+          html: `<main class="card">\n  <div class="eyebrow">FRAME / 001</div>\n  <h1>Build in public.</h1>\n  <p>Shape an idea, one line at a time.</p>\n  <button id="spark">Make it glow <span>✦</span></button>\n</main>`,
+          css: `*, *::before, *::after { box-sizing: border-box; }\n\nhtml, body { max-width: 100%; overflow-x: hidden; }\n\n:root {\n  font-family: system-ui, sans-serif;\n  color: #f4f7fb;\n  background: #111827;\n}\n\nbody {\n  min-height: 100vh;\n  display: grid;\n  place-items: center;\n  margin: 0;\n  background: radial-gradient(circle at 50% 0%, #263d50, #111827 62%);\n}\n\n.card {\n  width: min(420px, calc(100% - 48px));\n  padding: 42px;\n  border: 1px solid rgba(255,255,255,.16);\n  border-radius: 22px;\n  background: rgba(15, 23, 42, .72);\n  box-shadow: 0 24px 80px rgba(0,0,0,.34);\n}\n\n.eyebrow { color: #b6f36b; font: 700 11px monospace; letter-spacing: .18em; }\nh1 { margin: 18px 0 8px; font-size: clamp(34px, 7vw, 55px); letter-spacing: -.07em; line-height: .95; }\np { color: #9cabc0; line-height: 1.7; }\nbutton { margin-top: 24px; padding: 12px 16px; border: 0; border-radius: 9px; color: #12200c; background: #b6f36b; font-weight: 800; cursor: pointer; }\nbutton:hover { filter: brightness(1.08); transform: translateY(-1px); }\nbutton span { margin-left: 5px; }`,
+          js: `const button = document.querySelector('#spark');\n\nbutton?.addEventListener('click', () => {\n  button.innerHTML = 'Glow activated <span>✺</span>';\n  document.querySelector('.card').style.boxShadow =\n    '0 0 0 1px #b6f36b, 0 24px 90px rgba(182,243,107,.34)';\n});`,
+        });
+
+        const editors = {
+          html: document.querySelector("#htmlEditor"),
+          css: document.querySelector("#cssEditor"),
+          js: document.querySelector("#jsEditor"),
+        };
+        const tabs = [...document.querySelectorAll(".tab-button")];
+        const lineNumbers = document.querySelector("#lineNumbers");
+        const activeFile = document.querySelector("#activeFile");
+        const fileLabel = document.querySelector("#fileLabel");
+        const fileIcon = document.querySelector("#fileIcon");
+        const editorHint = document.querySelector("#editorHint");
+        const statusMessage = document.querySelector("#statusMessage");
+        const charCount = document.querySelector("#charCount");
+        const renderTime = document.querySelector("#renderTime");
+        const frame = document.querySelector("#previewFrame");
+        const emptyPreview = document.querySelector("#previewEmpty");
+        const app = document.querySelector("#app");
+        const autocompleteMenu = document.querySelector("#autocompleteMenu");
+        const autocompletePreview = document.querySelector(
+          "#autocompletePreview",
+        );
+        let activeTab = "html";
+        let theme = "dark";
+        let renderTimer;
+        let lastProject = null;
+        let autocompleteState = null;
+
+        const HTML_TAGS = [
+          "a",
+          "article",
+          "aside",
+          "blockquote",
+          "button",
+          "div",
+          "form",
+          "footer",
+          "h1",
+          "h2",
+          "h3",
+          "header",
+          "img",
+          "input",
+          "label",
+          "li",
+          "main",
+          "nav",
+          "p",
+          "section",
+          "span",
+          "strong",
+          "table",
+          "td",
+          "textarea",
+          "ul",
+        ];
+
+        const fileMeta = {
+          html: {
+            name: "index.html",
+            icon: "solar:code-square-linear",
+            hint: "HTML · 2 spaces",
+          },
+          css: {
+            name: "styles.css",
+            icon: "solar:palette-round-linear",
+            hint: "CSS · 2 spaces",
+          },
+          js: {
+            name: "script.js",
+            icon: "solar:code-2-linear",
+            hint: "JavaScript · 2 spaces",
+          },
+        };
+
+        function getData() {
+          return {
+            html: editors.html.value,
+            css: editors.css.value,
+            js: editors.js.value,
+            name:
+              document.querySelector("#projectName").value ||
+              "Untitled Project",
+            theme,
+            activeTab,
+            editorWidth:
+              parseFloat(document.querySelector("#editorPanel").style.width) ||
+              51,
+          };
+        }
+
+        function setStatus(text, kind = "") {
+          statusMessage.className =
+            "status-item status-message" + (kind ? " " + kind : "");
+          statusMessage.innerHTML =
+            "<span>" +
+            (kind === "error" ? "!" : kind === "saving" ? "◌" : "●") +
+            "</span><strong>" +
+            text +
+            "</strong>";
+        }
+
+        function updateLines(editor = editors[activeTab]) {
+          const count = Math.max(1, editor.value.split("\n").length);
+          lineNumbers.innerHTML = Array.from(
+            { length: count },
+            (_, i) => "<div>" + (i + 1) + "</div>",
+          ).join("");
+          lineNumbers.scrollTop = editor.scrollTop;
+          charCount.textContent = Object.values(editors)
+            .reduce((sum, input) => sum + input.value.length, 0)
+            .toLocaleString();
+        }
+
+        function switchTab(name) {
+          activeTab = name;
+          tabs.forEach((tab) => {
+            const on = tab.dataset.tab === name;
+            tab.classList.toggle("active", on);
+            tab.setAttribute("aria-selected", String(on));
+          });
+          Object.entries(editors).forEach(([key, input]) => {
+            input.hidden = key !== name;
+          });
+          const meta = fileMeta[name];
+          activeFile.textContent = meta.name;
+          fileLabel.textContent = meta.name;
+          fileIcon.setAttribute("icon", meta.icon);
+          editorHint.textContent = meta.hint;
+          editors[name].focus();
+          updateLines(editors[name]);
+          if (name !== "html") hideAutocomplete();
+          persist(false);
+        }
+
+        function encode(value) {
+          return btoa(unescape(encodeURIComponent(value)));
+        }
+        function decode(value) {
+          return decodeURIComponent(escape(atob(value)));
+        }
+
+        function loadProject() {
+          const project = { ...STARTER };
+          try {
+            if (location.hash.startsWith("#project=")) {
+              const parsed = JSON.parse(decode(location.hash.slice(9)));
+              if (parsed.html !== undefined) Object.assign(project, parsed);
+            } else {
+              const saved = JSON.parse(
+                localStorage.getItem(STORAGE_KEY) || "null",
+              );
+              if (saved && saved.html !== undefined)
+                Object.assign(project, saved);
+              if (saved?.theme) theme = saved.theme;
+              if (saved?.activeTab) activeTab = saved.activeTab;
+            }
+          } catch (error) {
+            console.warn("Could not load saved project", error);
+          }
+          editors.html.value = project.html;
+          editors.css.value = project.css;
+          editors.js.value = project.js;
+          document.querySelector("#projectName").value =
+            project.name || "Untitled Project";
+          if (Number.isFinite(project.editorWidth)) {
+            const width = Math.max(28, Math.min(72, project.editorWidth));
+            document.querySelector("#editorPanel").style.width = width + "%";
+            document.querySelector("#previewPanel").style.width =
+              100 - width + "%";
+          }
+          applyTheme(theme);
+          switchTab(activeTab);
+        }
+
+        function persist(showMessage = true) {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(getData()));
+          } catch (error) {
+            console.warn("Storage unavailable");
+          }
+          if (showMessage) {
+            setStatus("Saved locally", "saving");
+            window.clearTimeout(persist.timer);
+            persist.timer = window.setTimeout(() => setStatus("Ready"), 1100);
+          }
+        }
+
+        function buildDocument() {
+          const html = editors.html.value.trim();
+          const css = editors.css.value;
+          const js = editors.js.value;
+          if (!html && !css && !js) return "";
+          const safeJs = js.replace(/<\/script/gi, "<\\/script");
+          return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}<script>\nwindow.addEventListener('error', function (event) { parent.postMessage({ source: 'framelab', type: 'error', message: event.message, line: event.lineno }, '*'); });\ntry { ${safeJs} } catch (error) { parent.postMessage({ source: 'framelab', type: 'error', message: error.message }, '*'); }\nparent.postMessage({ source: 'framelab', type: 'ready' }, '*');<\/script></body></html>`;
+        }
+
+        function runPreview() {
+          const started = performance.now();
+          const source = buildDocument();
+          emptyPreview.classList.toggle("visible", !source);
+          if (!source) {
+            frame.srcdoc = "<!doctype html><html><body></body></html>";
+            setStatus("Canvas is ready");
+            renderTime.textContent = "—";
+            return;
+          }
+          setStatus("Rendering…", "saving");
+          frame.srcdoc = source;
+          lastProject = source;
+          window.setTimeout(() => {
+            renderTime.textContent =
+              Math.max(1, Math.round(performance.now() - started)) + "ms";
+            setStatus("Live");
+          }, 120);
+          persist(false);
+        }
+
+        function scheduleRun() {
+          window.clearTimeout(renderTimer);
+          renderTimer = window.setTimeout(runPreview, 420);
+          persist(false);
+        }
+
+        function formatActive() {
+          const input = editors[activeTab];
+          let value = input.value;
+          if (activeTab === "html")
+            value = value
+              .replace(/>\s+</g, ">\n<")
+              .replace(/^\s+/gm, (line) => line.trim());
+          if (activeTab === "css")
+            value = value
+              .replace(/\s*{\s*/g, " {\n  ")
+              .replace(/;\s*/g, ";\n  ")
+              .replace(/\s*}/g, "\n}")
+              .replace(/\n  \n}/g, "\n}")
+              .replace(/^  }/gm, "}");
+          if (activeTab === "js")
+            value = value
+              .replace(/;\s*/g, ";\n")
+              .replace(/\{\s*/g, "{\n  ")
+              .replace(/\s*}/g, "\n}");
+          input.value = value.replace(/\n{3,}/g, "\n\n").trim();
+          updateLines(input);
+          scheduleRun();
+        }
+
+        function clearAllCode() {
+          Object.values(editors).forEach((editor) => {
+            editor.value = "";
+          });
+          hideAutocomplete();
+          updateLines(editors[activeTab]);
+          runPreview();
+          persist(true);
+          editors[activeTab].focus();
+        }
+
+        function applyTheme(next) {
+          theme = next;
+          app.dataset.theme = theme === "light" ? "light" : "dark";
+          document
+            .querySelector("#themeToggle iconify-icon")
+            .setAttribute(
+              "icon",
+              theme === "light"
+                ? "solar:sun-2-linear"
+                : "solar:moon-stars-linear",
+            );
+          document.querySelector("#themeLabel").textContent =
+            theme === "light" ? "Light workspace" : "Dark workspace";
+          persist(false);
+        }
+
+        function openPopover(button, menu) {
+          document
+            .querySelectorAll(".popover.open")
+            .forEach((item) => item.classList.remove("open"));
+          const rect = button.getBoundingClientRect();
+          menu.style.top = rect.bottom + 8 + "px";
+          menu.style.left =
+            Math.min(window.innerWidth - menu.offsetWidth - 14, rect.left) +
+            "px";
+          menu.classList.add("open");
+        }
+
+        function hideAutocomplete() {
+          autocompleteState = null;
+          autocompleteMenu.classList.remove("visible");
+        }
+
+        function updateAutocomplete(editor) {
+          if (
+            activeTab !== "html" ||
+            editor.hidden ||
+            editor.selectionStart !== editor.selectionEnd
+          ) {
+            hideAutocomplete();
+            return;
+          }
+          const cursor = editor.selectionStart;
+          const lineStart = editor.value.lastIndexOf("\n", cursor - 1) + 1;
+          const beforeCursor = editor.value.slice(lineStart, cursor);
+          const match = beforeCursor.match(/(^|[\s<])([a-z][\w-]*)$/i);
+          if (!match) {
+            hideAutocomplete();
+            return;
+          }
+          const typed = match[2].toLowerCase();
+          const tag = HTML_TAGS.find((item) => item.startsWith(typed));
+          if (!tag) {
+            hideAutocomplete();
+            return;
+          }
+          const tokenStart = lineStart + match.index + match[1].length;
+          autocompleteState = {
+            editor,
+            tag,
+            start: match[1] === "<" ? tokenStart - 1 : tokenStart,
+            end: cursor,
+          };
+          autocompletePreview.textContent = `<${tag}> </${tag}>`;
+          autocompleteMenu.classList.add("visible");
+        }
+
+        function acceptAutocomplete(editor) {
+          if (!autocompleteState || autocompleteState.editor !== editor)
+            return false;
+          const { tag, start, end } = autocompleteState;
+          const voidTags = new Set([
+            "area",
+            "base",
+            "br",
+            "col",
+            "embed",
+            "hr",
+            "img",
+            "input",
+            "link",
+            "meta",
+            "param",
+            "source",
+            "track",
+            "wbr",
+          ]);
+          const opening = `<${tag}>`;
+          const replacement = voidTags.has(tag)
+            ? opening
+            : `${opening}</${tag}>`;
+          editor.value =
+            editor.value.slice(0, start) +
+            replacement +
+            editor.value.slice(end);
+          editor.selectionStart = editor.selectionEnd = voidTags.has(tag)
+            ? start + replacement.length
+            : start + opening.length;
+          hideAutocomplete();
+          updateLines(editor);
+          scheduleRun();
+          return true;
+        }
+
+        function expandHtmlAbbreviation(editor) {
+          if (
+            activeTab !== "html" ||
+            editor.selectionStart !== editor.selectionEnd
+          )
+            return false;
+          const cursor = editor.selectionStart;
+          const lineStart = editor.value.lastIndexOf("\n", cursor - 1) + 1;
+          const beforeCursor = editor.value.slice(lineStart, cursor);
+          const match =
+            beforeCursor.match(/(^|\s)([a-z][\w-]*(?:(?:[.#])[\w-]+)*)$/i) ||
+            beforeCursor.match(/(^|\s)((?:[.#])[\w-]+(?:[.#][\w-]+)*)$/i);
+          if (!match) return false;
+
+          const abbreviation = match[2];
+          const parsed = abbreviation.match(
+            /^([a-z][\w-]*)?((?:[.#][\w-]+)*)$/i,
+          );
+          if (!parsed) return false;
+          const tag = parsed[1] || "div";
+          const suffixes = parsed[2];
+          const attributes = [];
+          suffixes.replace(/([.#])([\w-]+)/g, (_, type, value) => {
+            attributes.push(
+              type === "." ? `class="${value}"` : `id="${value}"`,
+            );
+            return "";
+          });
+          const voidTags = new Set([
+            "area",
+            "base",
+            "br",
+            "col",
+            "embed",
+            "hr",
+            "img",
+            "input",
+            "link",
+            "meta",
+            "param",
+            "source",
+            "track",
+            "wbr",
+          ]);
+          const opening = `<${tag}${attributes.length ? " " + attributes.join(" ") : ""}>`;
+          const replacement = voidTags.has(tag.toLowerCase())
+            ? opening
+            : `${opening}</${tag}>`;
+          const abbreviationStart = lineStart + match.index + match[1].length;
+          editor.value =
+            editor.value.slice(0, abbreviationStart) +
+            replacement +
+            editor.value.slice(cursor);
+          const insertionPoint = voidTags.has(tag.toLowerCase())
+            ? replacement.length
+            : opening.length;
+          editor.selectionStart = editor.selectionEnd =
+            abbreviationStart + insertionPoint;
+          updateLines(editor);
+          scheduleRun();
+          return true;
+        }
+
+        tabs.forEach((tab) =>
+          tab.addEventListener("click", () => switchTab(tab.dataset.tab)),
+        );
+        Object.values(editors).forEach((editor) => {
+          editor.addEventListener("input", () => {
+            updateLines(editor);
+            updateAutocomplete(editor);
+            scheduleRun();
+          });
+          editor.addEventListener("focus", () => updateAutocomplete(editor));
+          editor.addEventListener("scroll", () => {
+            if (!editor.hidden) lineNumbers.scrollTop = editor.scrollTop;
+          });
+          editor.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+              hideAutocomplete();
+              return;
+            }
+            if (event.key === "Tab") {
+              event.preventDefault();
+              if (acceptAutocomplete(editor)) return;
+              if (expandHtmlAbbreviation(editor)) return;
+              const start = editor.selectionStart;
+              const end = editor.selectionEnd;
+              editor.value =
+                editor.value.slice(0, start) + "  " + editor.value.slice(end);
+              editor.selectionStart = editor.selectionEnd = start + 2;
+              updateLines(editor);
+              scheduleRun();
+            }
+            if (event.key === "Enter") {
+              const line = editor.value
+                .slice(0, editor.selectionStart)
+                .split("\n")
+                .pop();
+              const indent = (line.match(/^\s*/) || [""])[0];
+              if (/[{[(]$/.test(line.trim())) {
+                event.preventDefault();
+                const extra = indent + "  ";
+                const insertion = "\n" + extra + "\n" + indent;
+                const start = editor.selectionStart;
+                editor.value =
+                  editor.value.slice(0, start) +
+                  insertion +
+                  editor.value.slice(editor.selectionEnd);
+                editor.selectionStart = editor.selectionEnd =
+                  start + 1 + extra.length;
+                updateLines(editor);
+                scheduleRun();
+              } else if (indent) {
+                event.preventDefault();
+                const start = editor.selectionStart;
+                editor.value =
+                  editor.value.slice(0, start) +
+                  "\n" +
+                  indent +
+                  editor.value.slice(editor.selectionEnd);
+                editor.selectionStart = editor.selectionEnd =
+                  start + indent.length + 1;
+                updateLines(editor);
+                scheduleRun();
+              }
+            }
+          });
+        });
+
+        document
+          .querySelector("#runButton")
+          .addEventListener("click", runPreview);
+        document
+          .querySelector("#formatButton")
+          .addEventListener("click", formatActive);
+        document
+          .querySelector("#resetButton")
+          .addEventListener("click", clearAllCode);
+        document
+          .querySelector("#themeToggle")
+          .addEventListener("click", () =>
+            applyTheme(theme === "dark" ? "light" : "dark"),
+          );
+        document
+          .querySelector("#projectName")
+          .addEventListener("input", () => persist(false));
+        document
+          .querySelector("#shareButton")
+          .addEventListener("click", async () => {
+            const encoded = encode(JSON.stringify(getData()));
+            const url = location.href.split("#")[0] + "#project=" + encoded;
+            try {
+              await navigator.clipboard.writeText(url);
+              setStatus("Share link copied", "saving");
+            } catch {
+              setStatus("Link ready in address bar");
+              history.replaceState(null, "", "#project=" + encoded);
+            }
+            window.setTimeout(() => setStatus("Ready"), 1500);
+          });
+        document.querySelector("#openPreview").addEventListener("click", () => {
+          if (!lastProject) runPreview();
+          const blob = new Blob([lastProject || buildDocument()], {
+            type: "text/html",
+          });
+          window.open(URL.createObjectURL(blob), "_blank", "noopener");
+        });
+
+        document.querySelectorAll("[data-menu]").forEach((button) =>
+          button.addEventListener("click", (event) => {
+            const menu = document.getElementById(button.dataset.menu);
+            menu.classList.contains("open")
+              ? menu.classList.remove("open")
+              : openPopover(button, menu);
+            event.stopPropagation();
+          }),
+        );
+        document
+          .querySelectorAll("[data-modal]")
+          .forEach((button) =>
+            button.addEventListener("click", () =>
+              document
+                .getElementById(button.dataset.modal)
+                .classList.add("open"),
+            ),
+          );
+        document
+          .querySelectorAll(".modal-dismiss")
+          .forEach((button) =>
+            button.addEventListener("click", () =>
+              button.closest(".modal-backdrop").classList.remove("open"),
+            ),
+          );
+        document
+          .querySelector("#projectMenu")
+          .addEventListener("click", (event) => {
+            const action =
+              event.target.closest("[data-action]")?.dataset.action;
+            if (!action) return;
+            document.querySelector("#projectMenu").classList.remove("open");
+            if (action === "reset") clearAllCode();
+            if (action === "save") persist(true);
+            if (action === "new") {
+              clearAllCode();
+              document.querySelector("#projectName").value = "Untitled Project";
+              persist(true);
+            }
+          });
+        document.addEventListener("click", (event) => {
+          if (
+            !event.target.closest(".nav-button") &&
+            !event.target.closest(".popover")
+          )
+            document
+              .querySelectorAll(".popover.open")
+              .forEach((menu) => menu.classList.remove("open"));
+        });
+        document.querySelectorAll(".modal-backdrop").forEach((backdrop) =>
+          backdrop.addEventListener("click", (event) => {
+            if (event.target === backdrop) backdrop.classList.remove("open");
+          }),
+        );
+        document.addEventListener("keydown", (event) => {
+          if (
+            (event.metaKey || event.ctrlKey) &&
+            event.key.toLowerCase() === "s"
+          ) {
+            event.preventDefault();
+            persist(true);
+          }
+          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+            event.preventDefault();
+            runPreview();
+          }
+          if (event.key === "Escape") {
+            document
+              .querySelectorAll(".modal-backdrop.open, .popover.open")
+              .forEach((item) => item.classList.remove("open"));
+          }
+        });
+
+        const resizeHandle = document.querySelector("#resizeHandle");
+        const editorPanel = document.querySelector("#editorPanel");
+        const previewPanel = document.querySelector("#previewPanel");
+        let dragging = false;
+        resizeHandle.addEventListener("pointerdown", (event) => {
+          dragging = true;
+          resizeHandle.classList.add("dragging");
+          resizeHandle.setPointerCapture(event.pointerId);
+        });
+        resizeHandle.addEventListener("pointermove", (event) => {
+          if (!dragging || window.innerWidth <= 680) return;
+          const bounds = document
+            .querySelector("#workspace")
+            .getBoundingClientRect();
+          const ratio = Math.max(
+            0.28,
+            Math.min(0.72, (event.clientX - bounds.left) / bounds.width),
+          );
+          editorPanel.style.width = ratio * 100 + "%";
+          previewPanel.style.width = (1 - ratio) * 100 + "%";
+        });
+        resizeHandle.addEventListener("pointerup", (event) => {
+          dragging = false;
+          resizeHandle.classList.remove("dragging");
+          resizeHandle.releasePointerCapture(event.pointerId);
+          persist(false);
+        });
+        resizeHandle.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          const current = parseFloat(editorPanel.style.width) || 51;
+          const next = current + (event.key === "ArrowLeft" ? -3 : 3);
+          editorPanel.style.width = Math.max(28, Math.min(72, next)) + "%";
+          previewPanel.style.width =
+            100 - Math.max(28, Math.min(72, next)) + "%";
+        });
+
+        window.addEventListener("message", (event) => {
+          if (event.data?.source !== "framelab") return;
+          if (event.data.type === "error")
+            setStatus("JS error: " + event.data.message, "error");
+          if (
+            event.data.type === "ready" &&
+            !statusMessage.classList.contains("error")
+          )
+            setStatus("Live");
+        });
+
+        loadProject();
+        updateLines(editors[activeTab]);
+        runPreview();
+      })();
+    </script>
+  </body>
+</html>
