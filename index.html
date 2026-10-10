@@ -543,7 +543,7 @@
         border-radius: 7px;
         background: var(--panel);
         box-shadow: 0 14px 28px rgba(0, 0, 0, 0.32);
-        pointer-events: none;
+        pointer-events: auto;
         opacity: 0;
         transform: translateY(-4px);
         transition:
@@ -574,6 +574,43 @@
         font:
           10px "Manrope",
           sans-serif;
+      }
+      .autocomplete-palette {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 3px;
+        margin-top: 4px;
+        padding-top: 4px;
+        border-top: 1px solid var(--line);
+      }
+      .autocomplete-palette:empty {
+        display: none;
+      }
+      .palette-swatch {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        padding: 4px 5px;
+        border-radius: 4px;
+        color: var(--muted);
+        font: 9px "DM Mono", monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .palette-swatch:hover,
+      .palette-swatch.active {
+        background: var(--accent-soft);
+        color: var(--text);
+      }
+      .palette-dot {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 10px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 3px;
+        background: var(--swatch);
       }
       .editor-input::-webkit-scrollbar,
       .line-numbers::-webkit-scrollbar,
@@ -1240,12 +1277,13 @@
                 class="autocomplete-menu"
                 id="autocompleteMenu"
                 role="listbox"
-                aria-label="HTML tag suggestions"
+                aria-label="Code suggestions"
               >
                 <div class="autocomplete-item active" id="autocompleteItem">
                   <span id="autocompletePreview">&lt;h1&gt; &lt;/h1&gt;</span
-                  ><small>Enter / Tab to insert</small>
+                  ><small id="autocompleteHint">Enter / Tab to insert</small>
                 </div>
+                <div class="autocomplete-palette" id="autocompletePalette"></div>
               </div>
               <textarea
                 id="htmlEditor"
@@ -1315,7 +1353,7 @@
               id="previewFrame"
               class="preview-frame"
               title="Live preview"
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-forms allow-modals"
             ></iframe>
             <div class="preview-empty" id="previewEmpty">
               <div class="empty-card">
@@ -1480,6 +1518,8 @@
         const autocompletePreview = document.querySelector(
           "#autocompletePreview",
         );
+        const autocompleteHint = document.querySelector("#autocompleteHint");
+        const autocompletePalette = document.querySelector("#autocompletePalette");
         let activeTab = "html";
         let theme = "dark";
         let renderTimer;
@@ -1514,6 +1554,254 @@
           "textarea",
           "ul",
         ];
+
+        const CSS_PROPERTIES = [
+          "align-content",
+          "align-items",
+          "align-self",
+          "animation",
+          "background",
+          "background-color",
+          "border",
+          "border-radius",
+          "box-shadow",
+          "box-sizing",
+          "color",
+          "display",
+          "flex",
+          "flex-direction",
+          "font-family",
+          "font-size",
+          "font-weight",
+          "gap",
+          "grid-template-columns",
+          "height",
+          "justify-content",
+          "line-height",
+          "margin",
+          "max-width",
+          "min-height",
+          "opacity",
+          "padding",
+          "position",
+          "text-align",
+          "text-decoration",
+          "transform",
+          "transition",
+          "width",
+          "z-index",
+        ];
+
+        const CSS_VALUES = {
+          display: ["block", "flex", "grid", "inline-block", "none"],
+          position: ["absolute", "fixed", "relative", "static", "sticky"],
+          "flex-direction": ["column", "row", "column-reverse", "row-reverse"],
+          "justify-content": ["center", "flex-start", "flex-end", "space-between", "space-around"],
+          "align-items": ["center", "flex-start", "flex-end", "stretch"],
+          "text-align": ["center", "left", "right", "justify"],
+          "font-weight": ["400", "500", "600", "700", "800", "bold"],
+          "box-sizing": ["border-box", "content-box"],
+        };
+        const CSS_COLOR_PROPERTIES = new Set([
+          "background",
+          "background-color",
+          "border",
+          "border-color",
+          "color",
+          "outline-color",
+          "text-decoration-color",
+        ]);
+        const CSS_SIZE_PROPERTIES = new Set([
+          "border-radius",
+          "font-size",
+          "gap",
+          "height",
+          "max-height",
+          "max-width",
+          "min-height",
+          "min-width",
+          "margin",
+          "padding",
+          "width",
+        ]);
+        const CSS_COLOR_VALUES = [
+          "aliceblue",
+          "antiquewhite",
+          "aqua",
+          "aquamarine",
+          "azure",
+          "beige",
+          "bisque",
+          "black",
+          "blanchedalmond",
+          "blue",
+          "blueviolet",
+          "brown",
+          "burlywood",
+          "cadetblue",
+          "chartreuse",
+          "chocolate",
+          "coral",
+          "cornflowerblue",
+          "cornsilk",
+          "crimson",
+          "cyan",
+          "darkblue",
+          "darkcyan",
+          "darkgray",
+          "darkgreen",
+          "darkorange",
+          "darkred",
+          "deeppink",
+          "deepskyblue",
+          "dodgerblue",
+          "gold",
+          "goldenrod",
+          "gray",
+          "green",
+          "greenyellow",
+          "hotpink",
+          "indigo",
+          "ivory",
+          "khaki",
+          "lavender",
+          "lime",
+          "magenta",
+          "maroon",
+          "navy",
+          "olive",
+          "orange",
+          "orangered",
+          "pink",
+          "plum",
+          "purple",
+          "red",
+          "royalblue",
+          "salmon",
+          "silver",
+          "skyblue",
+          "teal",
+          "tomato",
+          "turquoise",
+          "violet",
+          "white",
+          "whitesmoke",
+          "yellow",
+          "yellowgreen",
+          "#000000",
+          "#ffffff",
+          "#f0f8ff",
+          "#ff0000",
+          "#00ff00",
+          "#0000ff",
+          "#f0f0f0",
+          "#333333",
+          "#666666",
+          "#999999",
+          "#cccccc",
+          "rgb(0, 0, 0)",
+          "rgba(0, 0, 0, 0.5)",
+          "transparent",
+          "currentColor",
+        ];
+        const CSS_COLOR_HEX = {
+          aliceblue: "#f0f8ff",
+          antiquewhite: "#faebd7",
+          aqua: "#00ffff",
+          aquamarine: "#7fffd4",
+          azure: "#f0ffff",
+          beige: "#f5f5dc",
+          bisque: "#ffe4c4",
+          black: "#000000",
+          blanchedalmond: "#ffebcd",
+          blue: "#0000ff",
+          blueviolet: "#8a2be2",
+          brown: "#a52a2a",
+          burlywood: "#deb887",
+          cadetblue: "#5f9ea0",
+          chartreuse: "#7fff00",
+          chocolate: "#d2691e",
+          coral: "#ff7f50",
+          cornflowerblue: "#6495ed",
+          cornsilk: "#fff8dc",
+          crimson: "#dc143c",
+          cyan: "#00ffff",
+          darkblue: "#00008b",
+          darkcyan: "#008b8b",
+          darkgray: "#a9a9a9",
+          darkgreen: "#006400",
+          darkorange: "#ff8c00",
+          darkred: "#8b0000",
+          deeppink: "#ff1493",
+          deepskyblue: "#00bfff",
+          dodgerblue: "#1e90ff",
+          gold: "#ffd700",
+          goldenrod: "#daa520",
+          gray: "#808080",
+          green: "#008000",
+          greenyellow: "#adff2f",
+          hotpink: "#ff69b4",
+          indigo: "#4b0082",
+          ivory: "#fffff0",
+          khaki: "#f0e68c",
+          lavender: "#e6e6fa",
+          lime: "#00ff00",
+          magenta: "#ff00ff",
+          maroon: "#800000",
+          navy: "#000080",
+          olive: "#808000",
+          orange: "#ffa500",
+          orangered: "#ff4500",
+          pink: "#ffc0cb",
+          plum: "#dda0dd",
+          purple: "#800080",
+          red: "#ff0000",
+          royalblue: "#4169e1",
+          salmon: "#fa8072",
+          silver: "#c0c0c0",
+          skyblue: "#87ceeb",
+          teal: "#008080",
+          tomato: "#ff6347",
+          turquoise: "#40e0d0",
+          violet: "#ee82ee",
+          white: "#ffffff",
+          whitesmoke: "#f5f5f5",
+          yellow: "#ffff00",
+          yellowgreen: "#9acd32",
+        };
+        const CSS_SIZE_VALUES = [
+          "0",
+          "1px",
+          "2px",
+          "4px",
+          "8px",
+          "12px",
+          "16px",
+          "24px",
+          "32px",
+          "48px",
+          "1rem",
+          "1.5rem",
+          "2rem",
+          "1em",
+          "2em",
+          "10%",
+          "25%",
+          "50%",
+          "100%",
+          "10vh",
+          "50vh",
+          "100vh",
+          "10vw",
+          "50vw",
+          "100vw",
+          "auto",
+          "min-content",
+          "max-content",
+          "fit-content",
+          "calc(100% - 16px)",
+        ];
+
 
         const fileMeta = {
           html: {
@@ -1747,12 +2035,27 @@
 
         function hideAutocomplete() {
           autocompleteState = null;
+          autocompletePalette.innerHTML = "";
           autocompleteMenu.classList.remove("visible");
+        }
+
+        function renderColorPalette(typed = "") {
+          const matches = CSS_COLOR_VALUES.filter(
+            (value) =>
+              CSS_COLOR_HEX[value] &&
+              value.toLowerCase().startsWith(typed.toLowerCase()),
+          ).slice(0, 12);
+          autocompletePalette.innerHTML = matches
+            .map(
+              (value) =>
+                `<button type="button" class="palette-swatch" data-value="${value}" title="Use ${value} (${CSS_COLOR_HEX[value]})"><i class="palette-dot" style="--swatch: ${CSS_COLOR_HEX[value]}"></i>${value}<small>${CSS_COLOR_HEX[value]}</small></button>`,
+            )
+            .join("");
         }
 
         function updateAutocomplete(editor) {
           if (
-            activeTab !== "html" ||
+            !["html", "css"].includes(activeTab) ||
             editor.hidden ||
             editor.selectionStart !== editor.selectionEnd
           ) {
@@ -1762,6 +2065,80 @@
           const cursor = editor.selectionStart;
           const lineStart = editor.value.lastIndexOf("\n", cursor - 1) + 1;
           const beforeCursor = editor.value.slice(lineStart, cursor);
+
+          if (activeTab === "css") {
+            const lastOpen = editor.value.lastIndexOf("{", cursor - 1);
+            const lastClose = editor.value.lastIndexOf("}", cursor - 1);
+            if (lastOpen <= lastClose) {
+              hideAutocomplete();
+              return;
+            }
+            const valueMatch = beforeCursor.match(/([\w-]+)\s*:\s*([#\w.-]*)$/);
+            if (valueMatch) {
+              const property = valueMatch[1].toLowerCase();
+              const typed = valueMatch[2].toLowerCase();
+              if (CSS_COLOR_PROPERTIES.has(property)) {
+                renderColorPalette(typed);
+              } else {
+                autocompletePalette.innerHTML = "";
+              }
+              const candidates = [
+                ...(CSS_VALUES[property] || []),
+                ...(CSS_COLOR_PROPERTIES.has(property) ? CSS_COLOR_VALUES : []),
+                ...(CSS_SIZE_PROPERTIES.has(property) ? CSS_SIZE_VALUES : []),
+                "auto",
+                "inherit",
+                "initial",
+                "unset",
+                "none",
+                "transparent",
+              ];
+              const value = candidates.find((item) =>
+                item.toLowerCase().startsWith(typed),
+              );
+              if (value) {
+                autocompleteState = {
+                  editor,
+                  kind: "css-value",
+                  value,
+                  start: cursor - valueMatch[2].length,
+                  end: cursor,
+                };
+                autocompletePreview.textContent =
+                  CSS_COLOR_HEX[value.toLowerCase()]
+                    ? `${value}  ${CSS_COLOR_HEX[value.toLowerCase()]}`
+                    : value;
+                autocompleteHint.textContent = "Enter / Tab to insert";
+                autocompleteMenu.classList.add("visible");
+                return;
+              }
+            }
+            const propertyMatch = beforeCursor.match(/(^|[\s{;])([\w-]*)$/);
+            if (!propertyMatch || !propertyMatch[2]) {
+              hideAutocomplete();
+              return;
+            }
+            const typed = propertyMatch[2].toLowerCase();
+            const property = CSS_PROPERTIES.find((item) =>
+              item.startsWith(typed),
+            );
+            if (!property) {
+              hideAutocomplete();
+              return;
+            }
+            autocompleteState = {
+              editor,
+              kind: "css-property",
+              property,
+              start: lineStart + propertyMatch.index + propertyMatch[1].length,
+              end: cursor,
+            };
+            autocompletePreview.textContent = `${property}:`;
+            autocompleteHint.textContent = "Enter / Tab to insert";
+            autocompleteMenu.classList.add("visible");
+            return;
+          }
+
           const match = beforeCursor.match(/(^|[\s<])([a-z][\w-]*)$/i);
           if (!match) {
             hideAutocomplete();
@@ -1776,18 +2153,37 @@
           const tokenStart = lineStart + match.index + match[1].length;
           autocompleteState = {
             editor,
+            kind: "html-tag",
             tag,
             start: match[1] === "<" ? tokenStart - 1 : tokenStart,
             end: cursor,
           };
           autocompletePreview.textContent = `<${tag}> </${tag}>`;
+          autocompleteHint.textContent = "Enter / Tab to insert";
           autocompleteMenu.classList.add("visible");
         }
 
         function acceptAutocomplete(editor) {
           if (!autocompleteState || autocompleteState.editor !== editor)
             return false;
-          const { tag, start, end } = autocompleteState;
+          const { kind, start, end } = autocompleteState;
+          if (kind === "css-property" || kind === "css-value") {
+            const replacement =
+              kind === "css-property"
+                ? `${autocompleteState.property}: `
+                : autocompleteState.value;
+            editor.value =
+              editor.value.slice(0, start) +
+              replacement +
+              editor.value.slice(end);
+            editor.selectionStart = editor.selectionEnd =
+              start + replacement.length;
+            hideAutocomplete();
+            updateLines(editor);
+            scheduleRun();
+            return true;
+          }
+          const { tag } = autocompleteState;
           const voidTags = new Set([
             "area",
             "base",
@@ -1821,6 +2217,13 @@
           return true;
         }
 
+        autocompletePalette.addEventListener("click", (event) => {
+          const swatch = event.target.closest("[data-value]");
+          if (!swatch || !autocompleteState?.editor) return;
+          autocompleteState.value = swatch.dataset.value;
+          acceptAutocomplete(autocompleteState.editor);
+        });
+
         function expandHtmlAbbreviation(editor) {
           if (
             activeTab !== "html" ||
@@ -1830,6 +2233,22 @@
           const cursor = editor.selectionStart;
           const lineStart = editor.value.lastIndexOf("\n", cursor - 1) + 1;
           const beforeCursor = editor.value.slice(lineStart, cursor);
+          const html5Match = beforeCursor.match(/(^|\s)!$/);
+          if (html5Match) {
+            const abbreviationStart =
+              lineStart + html5Match.index + html5Match[1].length;
+            const replacement = `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Document</title>\n</head>\n<body>\n  \n</body>\n</html>`;
+            editor.value =
+              editor.value.slice(0, abbreviationStart) +
+              replacement +
+              editor.value.slice(cursor);
+            const bodyCursor = replacement.indexOf("  ", replacement.indexOf("<body>"));
+            editor.selectionStart = editor.selectionEnd =
+              abbreviationStart + bodyCursor + 2;
+            updateLines(editor);
+            scheduleRun();
+            return true;
+          }
           const match =
             beforeCursor.match(/(^|\s)([a-z][\w-]*(?:(?:[.#])[\w-]+)*)$/i) ||
             beforeCursor.match(/(^|\s)((?:[.#])[\w-]+(?:[.#][\w-]+)*)$/i);
@@ -1902,6 +2321,23 @@
               hideAutocomplete();
               return;
             }
+            if (
+              event.key === "{" &&
+              activeTab === "css" &&
+              editor.selectionStart === editor.selectionEnd
+            ) {
+              event.preventDefault();
+              const start = editor.selectionStart;
+              editor.value =
+                editor.value.slice(0, start) +
+                "{}" +
+                editor.value.slice(editor.selectionEnd);
+              editor.selectionStart = editor.selectionEnd = start + 1;
+              updateLines(editor);
+              updateAutocomplete(editor);
+              scheduleRun();
+              return;
+            }
             if (event.key === "Tab") {
               event.preventDefault();
               if (acceptAutocomplete(editor)) return;
@@ -1916,6 +2352,10 @@
             }
             if (event.key === "Enter") {
               if (acceptAutocomplete(editor)) {
+                event.preventDefault();
+                return;
+              }
+              if (expandHtmlAbbreviation(editor)) {
                 event.preventDefault();
                 return;
               }
