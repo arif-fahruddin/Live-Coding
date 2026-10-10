@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#111827" />
     <title>Labkom MALADI — Live Coding Studio</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23b6f36b'/%3E%3Cpath d='M24 20 12 32l12 12M40 20l12 12-12 12M36 16 28 48' fill='none' stroke='%23101518' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23b6f36b'/%3E%3Cpath d='M24 20 12 32l12 12M40 20l12 12-12 12M36 16 28 48' fill='none' stroke='%23101518' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
     <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
@@ -1392,8 +1396,8 @@
             <b>Storage</b><span>Local browser only</span>
           </div>
           <p style="margin-top: 14px">
-            Labkom MALADI keeps your project in this browser. No account or server is
-            required.
+            Labkom MALADI keeps your project in this browser. No account or
+            server is required.
           </p>
         </div>
         <div class="modal-footer">
@@ -1446,9 +1450,9 @@
       (() => {
         const STORAGE_KEY = "framelab-project-v1";
         const STARTER = Object.freeze({
-          html: `<main class="card">\n  <div class="eyebrow">FRAME / 001</div>\n  <h1>Build in public.</h1>\n  <p>Shape an idea, one line at a time.</p>\n  <button id="spark">Make it glow <span>✦</span></button>\n</main>`,
+          html: `<main class="card">\n  <div class="eyebrow">FRAME / 001</div>\n  <h1>LABKOM MALADI.</h1>\n  <p>Untuk memulai dengan canvas kosong silahkan tekan tombol dibawah ini.</p>\n  <button id="spark">Hapus Semua</button>\n</main>`,
           css: `*, *::before, *::after { box-sizing: border-box; }\n\nhtml, body { max-width: 100%; overflow-x: hidden; }\n\n:root {\n  font-family: system-ui, sans-serif;\n  color: #f4f7fb;\n  background: #111827;\n}\n\nbody {\n  min-height: 100vh;\n  display: grid;\n  place-items: center;\n  margin: 0;\n  background: radial-gradient(circle at 50% 0%, #263d50, #111827 62%);\n}\n\n.card {\n  width: min(420px, calc(100% - 48px));\n  padding: 42px;\n  border: 1px solid rgba(255,255,255,.16);\n  border-radius: 22px;\n  background: rgba(15, 23, 42, .72);\n  box-shadow: 0 24px 80px rgba(0,0,0,.34);\n}\n\n.eyebrow { color: #b6f36b; font: 700 11px monospace; letter-spacing: .18em; }\nh1 { margin: 18px 0 8px; font-size: clamp(34px, 7vw, 55px); letter-spacing: -.07em; line-height: .95; }\np { color: #9cabc0; line-height: 1.7; }\nbutton { margin-top: 24px; padding: 12px 16px; border: 0; border-radius: 9px; color: #12200c; background: #b6f36b; font-weight: 800; cursor: pointer; }\nbutton:hover { filter: brightness(1.08); transform: translateY(-1px); }\nbutton span { margin-left: 5px; }`,
-          js: `const button = document.querySelector('#spark');\n\nbutton?.addEventListener('click', () => {\n  button.innerHTML = 'Glow activated <span>✺</span>';\n  document.querySelector('.card').style.boxShadow =\n    '0 0 0 1px #b6f36b, 0 24px 90px rgba(182,243,107,.34)';\n});`,
+          js: `const button = document.querySelector('#spark');\n\nbutton?.addEventListener('click', () => {\n  parent.postMessage({ source: 'framelab', type: 'clear-all-code' }, '*');\n});`,
         });
 
         const editors = {
@@ -2092,6 +2096,10 @@
 
         window.addEventListener("message", (event) => {
           if (event.data?.source !== "framelab") return;
+          if (event.data.type === "clear-all-code") {
+            clearAllCode();
+            return;
+          }
           if (event.data.type === "error")
             setStatus("JS error: " + event.data.message, "error");
           if (
